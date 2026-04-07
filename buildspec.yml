@@ -1,0 +1,17 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo Validando el entorno y archivos...
+      - ls -l
+  build:
+    commands:
+      - echo Construyendo la imagen de Docker para asegurar que no hay errores...
+      - docker build -t mi-app-stf:latest .
+  post_build:
+    commands:
+      - echo ¡Todo listo! El código está empaquetado y verificado.
+artifacts:
+  files:
+    - '**/*'
