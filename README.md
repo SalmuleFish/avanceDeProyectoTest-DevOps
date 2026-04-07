@@ -4,7 +4,7 @@ Proyecto para la materia de **DevOps – Semestre 4**. Es una aplicación web he
 
 ## 📋 ¿Qué hace?
 
-Al visitar la ruta principal (`/`) del servidor, la aplicación genera al vuelo un archivo `reporte_matematico.csv` y lo descarga automáticamente. El reporte incluye las siguientes secciones:
+Al abrir la aplicación en el navegador, se muestra una **interfaz gráfica** con un botón para generar y descargar el reporte. Al hacer clic, se genera al vuelo un archivo `reporte_matematico.csv` con las siguientes secciones:
 
 | Sección | Descripción |
 |---|---|
@@ -20,6 +20,8 @@ Al visitar la ruta principal (`/`) del servidor, la aplicación genera al vuelo 
 avanceProyecto/
 ├── app.py               # Servidor web Flask (punto de entrada)
 ├── calculos.py          # Módulo con toda la lógica de cálculos y generación del CSV
+├── templates/
+│   └── index.html       # Interfaz gráfica (página principal)
 ├── requirements.txt     # Dependencias de Python (Flask 3.0.3)
 ├── Dockerfile           # Imagen Docker con multi-stage build
 ├── docker-compose.yml   # Orquestación del contenedor
@@ -29,7 +31,10 @@ avanceProyecto/
 
 ### Descripción de archivos clave
 
-- **`app.py`** – Levanta un servidor Flask en el puerto `5000`. En la ruta `/` llama a `calculos.generar_reporte_csv()` y devuelve el CSV como descarga.
+- **`app.py`** – Levanta un servidor Flask en el puerto `5000`. Tiene dos rutas:
+  - `/` – Muestra la interfaz gráfica (`index.html`).
+  - `/descargar` – Ejecuta los cálculos y devuelve el CSV como descarga.
+- **`templates/index.html`** – Página HTML con un botón que apunta a `/descargar` para generar y bajar el reporte.
 - **`calculos.py`** – Contiene las funciones de cálculo (estadísticas, aritmética, trigonometría, Fibonacci, factoriales) y la función `generar_reporte_csv()` que arma el CSV completo. También se puede ejecutar de forma independiente (`python calculos.py`) para generar el reporte localmente.
 - **`Dockerfile`** – Usa un **multi-stage build** con `python:3.10-slim` para mantener la imagen liviana.
 - **`docker-compose.yml`** – Define el servicio `web` y mapea el puerto `8080` (host) al `5000` (contenedor), dentro de una red personalizada (`stf-network`).
@@ -54,7 +59,7 @@ avanceProyecto/
 docker-compose up --build
 ```
 
-La aplicación estará disponible en **http://localhost:8080**. Al abrir esa URL en el navegador, se descargará automáticamente el archivo `reporte_matematico.csv`.
+La aplicación estará disponible en **http://localhost:8080**. Se mostrará una página con un botón para generar y descargar el archivo `reporte_matematico.csv`.
 
 ### Opción 2: Solo con Docker
 

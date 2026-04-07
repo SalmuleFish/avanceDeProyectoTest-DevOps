@@ -1,12 +1,16 @@
-from flask import Flask, send_file
+from flask import Flask, send_file, render_template
 import calculos
-import os
 
 app = Flask(__name__)
 
 @app.route('/')
+def inicio():
+    # Muestra la interfaz gráfica
+    return render_template('index.html')
+
+@app.route('/descargar')
 def descargar_reporte():
-    # Usamos /tmp para guardar el archivo temporalmente en el contenedor
+    # Hace los cálculos y descarga el archivo
     archivo_generado = calculos.generar_reporte_csv('/tmp')
     return send_file(archivo_generado, as_attachment=True, download_name='reporte_matematico.csv')
 
