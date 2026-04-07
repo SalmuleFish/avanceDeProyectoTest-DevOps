@@ -1,0 +1,15 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  MiServidorWeb:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-0c7217cdde317cfec
+      IamInstanceProfile: LabInstanceProfile
+      Tags:
+        - Key: Name
+          Value: Servidor-STF-CloudFormation
+  MiBucketS3:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: salmules-devops-bucket-test-2026
