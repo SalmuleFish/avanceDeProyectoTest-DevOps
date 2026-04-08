@@ -1,4 +1,22 @@
-InstanciaProyectoSTF:
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Despliegue de infraestructura STF
+
+Resources:
+  MiSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Permitir SSH y Flask
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 5000
+          ToPort: 5000
+          CidrIp: 0.0.0.0/0
+
+  InstanciaProyectoSTF:
     Type: AWS::EC2::Instance
     Properties:
       InstanceType: t2.micro
@@ -9,23 +27,12 @@ InstanciaProyectoSTF:
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
-          # Actualizamos paquetes e instalamos Docker y Git (usando dnf, el nuevo estándar)
           dnf update -y
-          dnf install docker -y
-          dnf install git -y
-          
-          # Arrancamos el servicio de Docker
+          dnf install docker git -y
           systemctl start docker
           systemctl enable docker
-          
-          # Permisos para que el usuario ec2-user pueda usar docker (opcional para el script)
-          usermod -a -G docker ec2-user
-          
-          # Clonamos tu repo y levantamos la app
           cd /home/ec2-user
           git clone https://github.com/SalmuleFish/avanceDeProyectoTest-DevOps.git
           cd avanceDeProyectoTest-DevOps
-          
-          # Construimos y corremos el contenedor
           docker build -t mi-app .
           docker run -d -p 5000:5000 mi-app
