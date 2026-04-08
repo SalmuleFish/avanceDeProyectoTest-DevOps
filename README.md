@@ -1,6 +1,6 @@
 # 🧮 Reporte Matemático – Aplicación Web Dockerizada
 
-Proyecto para la materia de **DevOps – Semestre 4**. Es una aplicación web hecha con Flask que genera un reporte CSV con cálculos matemáticos y estadísticos, empaquetada en un contenedor Docker listo para producción.
+Proyecto para la materia de **DevOps – Semestre 4**. Es una aplicación web hecha con Flask que genera un reporte CSV con cálculos matemáticos y estadísticos, empaquetada en un contenedor Docker y con infraestructura como código (IaC) para desplegarse en **AWS**.
 
 ## 📋 ¿Qué hace?
 
@@ -24,7 +24,9 @@ avanceProyecto/
 │   └── index.html       # Interfaz gráfica (página principal)
 ├── requirements.txt     # Dependencias de Python (Flask 3.0.3)
 ├── Dockerfile           # Imagen Docker con multi-stage build
-├── docker-compose.yml   # Orquestación del contenedor
+├── docker-compose.yml   # Orquestación del contenedor (local)
+├── infraestructura.yaml # CloudFormation – infraestructura AWS
+├── buildspec.yml        # Especificación de build para AWS CodeBuild
 ├── .gitignore           # Archivos ignorados por Git
 └── README.md            # Este archivo
 ```
@@ -38,6 +40,8 @@ avanceProyecto/
 - **`calculos.py`** – Contiene las funciones de cálculo (estadísticas, aritmética, trigonometría, Fibonacci, factoriales) y la función `generar_reporte_csv()` que arma el CSV completo. También se puede ejecutar de forma independiente (`python calculos.py`) para generar el reporte localmente.
 - **`Dockerfile`** – Usa un **multi-stage build** con `python:3.10-slim` para mantener la imagen liviana.
 - **`docker-compose.yml`** – Define el servicio `web` y mapea el puerto `8080` (host) al `5000` (contenedor), dentro de una red personalizada (`stf-network`).
+- **`infraestructura.yaml`** – Template de **AWS CloudFormation** que crea una instancia EC2 (`t2.micro`) con un Security Group que permite SSH (22) y Flask (5000). El `UserData` instala Docker, clona el repo, construye la imagen y levanta el contenedor automáticamente.
+- **`buildspec.yml`** – Archivo de configuración para **AWS CodeBuild**. Valida el entorno, construye la imagen Docker y empaqueta todos los archivos como artefactos.
 
 ## 🛠️ Requisitos
 
@@ -113,6 +117,35 @@ suma,782
 media,52.133...
 ...
 ```
+
+## ☁️ Despliegue en AWS
+
+### Infraestructura (CloudFormation)
+
+El archivo `infraestructura.yaml` define la infraestructura completa en AWS:
+
+| Recurso | Tipo | Detalle |
+|---|---|---|
+| **MiSecurityGroup** | `AWS::EC2::SecurityGroup` | Abre puertos 22 (SSH) y 5000 (Flask) |
+| **InstanciaProyectoSTF** | `AWS::EC2::Instance` | `t2.micro` con Amazon Linux, instala Docker vía `UserData` |
+
+Para desplegar:
+
+```bash
+aws cloudformation create-stack --stack-name stf-proyecto --template-body file://infraestructura.yaml
+```
+
+El script de `UserData` se ejecuta automáticamente al arrancar la instancia: actualiza el sistema, instala Docker y Git, clona el repositorio, construye la imagen y levanta el contenedor.
+
+### CI/CD (CodeBuild)
+
+El archivo `buildspec.yml` se usa con **AWS CodeBuild** para validar que el proyecto se construye correctamente:
+
+1. **pre_build** – Valida el entorno y lista los archivos.
+2. **build** – Construye la imagen Docker (`mi-app-stf:latest`).
+3. **post_build** – Confirma que todo está listo.
+
+Los artefactos incluyen todos los archivos del proyecto (`**/*`).
 
 ## 🤝 Notas
 
