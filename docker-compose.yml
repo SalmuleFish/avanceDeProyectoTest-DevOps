@@ -6,8 +6,8 @@ services:
       - "5000:5000"
     restart: always
     networks:
-      - red-financiera-stf
+      - red-financiera-stp
 
 networks:
-  red-financiera-stf:
+  red-financiera-stp:
     driver: bridge
