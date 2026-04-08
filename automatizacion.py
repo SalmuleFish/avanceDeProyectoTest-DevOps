@@ -1,24 +1,31 @@
 import boto3
+import datetime
 
-# Configuración de la sesión (Boto3 usa las credenciales del entorno)
-ec2 = boto3.client('ec2', region_name='us-east-1')
-s3 = boto3.client('s3')
-
-def generar_reporte():
-    print("=== REPORTE DE RECURSOS STF ===")
+def generar_y_subir_reporte():
+    ec2 = boto3.client('ec2', region_name='us-east-1')
+    s3 = boto3.client('s3', region_name='us-east-1')
     
-    # 1. Listar Instancias EC2
-    print("\n--- Instancias EC2 ---")
+    # Nombre de tu bucket (Cambiá el número por el tuyo si es distinto)
+    nombre_bucket = "reportes-stf-590184134445"
+    nombre_archivo = f"reporte-{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}.txt"
+    
+    # Generar el contenido del reporte
+    contenido = "=== REPORTE DE RECURSOS STF ===\n\n"
+    
     instances = ec2.describe_instances()
+    contenido += "--- Instancias EC2 ---\n"
     for reservation in instances['Reservations']:
-        for instance in reservation['Instances']:
-            print(f"ID: {instance['InstanceId']} | Estado: {instance['State']['Name']} | Tipo: {instance['InstanceType']}")
-
-    # 2. Listar Buckets en S3
-    print("\n--- Buckets S3 ---")
-    buckets = s3.list_buckets()
-    for bucket in buckets['Buckets']:
-        print(f"Nombre del Bucket: {bucket['Name']}")
+        for inst in reservation['Instances']:
+            contenido += f"ID: {inst['InstanceId']} | Estado: {inst['State']['Name']} | Tipo: {inst['InstanceType']}\n"
+    
+    # Guardar localmente el reporte
+    with open(nombre_archivo, "w") as f:
+        f.write(contenido)
+    
+    # SUBIR AL S3 🚀
+    print(f"Subiendo {nombre_archivo} al bucket {nombre_bucket}...")
+    s3.upload_file(nombre_archivo, nombre_bucket, nombre_archivo)
+    print("¡Reporte guardado en S3 con éxito!")
 
 if __name__ == "__main__":
-    generar_reporte()
+    generar_y_subir_reporte()
