@@ -24,20 +24,31 @@ Resources:
       KeyName: vockey
       SecurityGroups:
         - !Ref MiSecurityGroup
+      Tags:
+        - Key: Name
+          Value: InstanciaProyectoSTF
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
+          # Instalacion y arranque de Docker
           dnf update -y
           dnf install docker git -y
           systemctl start docker
           systemctl enable docker
           usermod -aG docker ec2-user
+
+          # Clonar repositorio
           cd /home/ec2-user
           rm -rf avanceDeProyectoTest-DevOps
           git clone https://github.com/SalmuleFish/avanceDeProyectoTest-DevOps.git
           cd avanceDeProyectoTest-DevOps
+
+          # Construir y ejecutar contenedor
           docker build -t mi-app .
-          docker run -d -p 5000:5000 mi-app
+          docker run -d -p 5000:5000 --restart always --name web-stf mi-app
+
+          # Configuracion de mantenimiento
+          mkdir -p /etc/cron.d
           echo "0 0 * * * truncate -s 0 /var/lib/docker/containers/*/*-json.log" > /etc/cron.d/limpieza_logs
           chmod 644 /etc/cron.d/limpieza_logs
 
