@@ -31,17 +31,24 @@ Resources:
           dnf install docker git -y
           systemctl start docker
           systemctl enable docker
+          # Agregamos permisos al usuario para evitar líos de sudo luego
+          usermod -aG docker ec2-user
           cd /home/ec2-user
+          # Borramos si ya existe para evitar errores en el clone
+          rm -rf avanceDeProyectoTest-DevOps
           git clone https://github.com/SalmuleFish/avanceDeProyectoTest-DevOps.git
           cd avanceDeProyectoTest-DevOps
           docker build -t mi-app .
           docker run -d -p 5000:5000 mi-app
-          
-# --- NUEVO RECURSO S3 ---
+          # --- CONFIGURACIÓN DE CRON JOB ---
+          echo "0 0 * * * truncate -s 0 /var/lib/docker/containers/*/*-json.log" > /etc/cron.d/limpieza_logs
+          chmod 644 /etc/cron.d/limpieza_logs
+
+  # --- NUEVO RECURSO S3 ---
   BucketDeReportesSTF:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub "reportes-stf-${AWS::AccountId}" # Nombre único usando tu ID de cuenta
+      BucketName: !Sub "reportes-stf-${AWS::AccountId}"
       Tags:
         - Key: Proyecto
           Value: STF
