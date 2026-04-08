@@ -36,3 +36,12 @@ Resources:
           cd avanceDeProyectoTest-DevOps
           docker build -t mi-app .
           docker run -d -p 5000:5000 mi-app
+          
+# --- NUEVO RECURSO S3 ---
+  BucketDeReportesSTF:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "reportes-stf-${AWS::AccountId}" # Nombre único usando tu ID de cuenta
+      Tags:
+        - Key: Proyecto
+          Value: STF
