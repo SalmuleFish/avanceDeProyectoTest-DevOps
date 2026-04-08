@@ -1,15 +1,23 @@
-AWSTemplateFormatVersion: '2010-09-09'
-Resources:
-  MiServidorWeb:
-    Type: 'AWS::EC2::Instance'
+InstanciaProyectoSTF:
+    Type: AWS::EC2::Instance
     Properties:
       InstanceType: t2.micro
-      ImageId: ami-0c7217cdde317cfec
-      IamInstanceProfile: LabInstanceProfile
-      Tags:
-        - Key: Name
-          Value: Servidor-STF-CloudFormation
-  MiBucketS3:
-    Type: 'AWS::S3::Bucket'
-    Properties:
-      BucketName: salmules-devops-bucket-test-2026
+      ImageId: ami-0c101f26f147fa7fd # Asegurate que sea una de Amazon Linux 2 o Ubuntu en us-east-1
+      KeyName: vockey # La que usa el Lab por defecto
+      SecurityGroups:
+        - !Ref MiSecurityGroup # El nombre que le hayas puesto a tu grupo
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          amazon-linux-extras install docker -y
+          service docker start
+          usermod -a -G docker ec2-user
+          # Acá es donde bajamos tu app. Como no tenemos un registro (ECR), 
+          # lo más fácil es que la máquina clone tu repo y lo corra:
+          yum install git -y
+          cd /home/ec2-user
+          git clone https://github.com/SalmuleFish/avanceDeProyectoTest-DevOps.git
+          cd avanceDeProyectoTest-DevOps
+          docker build -t mi-app .
+          docker run -d -p 5000:5000 mi-app
