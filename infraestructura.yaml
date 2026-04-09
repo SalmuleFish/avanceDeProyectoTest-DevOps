@@ -55,7 +55,7 @@ Resources:
   BucketDeReportesSTP:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub "reportes-stp-${AWS::AccountId}"
+      BucketName: !Sub "reportes-stp"
       Tags:
         - Key: Proyecto
           Value: STP
