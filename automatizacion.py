@@ -5,7 +5,7 @@ def generar_y_subir_reporte():
     ec2 = boto3.client('ec2', region_name='us-east-1')
     s3 = boto3.client('s3', region_name='us-east-1')
     
-    nombre_bucket = f"reportes-stp-{AWS::AccountId}"
+    nombre_bucket = f"reportes-stp"
     nombre_archivo = f"reporte-{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}.txt"
     
     # Generar el contenido del reporte
