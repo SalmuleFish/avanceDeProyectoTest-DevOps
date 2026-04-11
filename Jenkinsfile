@@ -42,17 +42,11 @@ pipeline {
 
         stage('Reporte de Recursos (Boto3)') {
             steps {
-                sh 'echo "Generando reporte de recursos activos con venv..."'
-                sh """
-                    # Crear entorno virtual
-                    python3 -m venv venv
-                    
-                    # Instalar boto3 dentro del venv
-                    ./venv/bin/pip install boto3
-                    
-                    # Ejecutar el script usando el python del venv
-                    ./venv/bin/python3 automatizacion.py
-                """
+                script {
+                    def accountId = sh(script: "${AWS_PATH} sts get-caller-identity --query Account --output text", returnStdout: true).trim()
+                    env.BUCKET_NAME = "reportes-stp-${accountId}"
+                }
+                sh "./venv/bin/python3 automatizacion.py"
             }
         }
     }
