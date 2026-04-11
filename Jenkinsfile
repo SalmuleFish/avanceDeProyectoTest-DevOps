@@ -15,7 +15,7 @@ pipeline {
     stages {
         stage('Clonar Repo') {
             steps {
-                git branch: 'main', url: 'https://github.com/SalmuleFish/avanceDeProyectoTest-DevOps.git'
+                git branch: 'testing', url: 'https://github.com/SalmuleFish/avanceDeProyectoTest-DevOps.git'
             }
         }
         
