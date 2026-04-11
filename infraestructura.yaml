@@ -1,10 +1,69 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Despliegue de infraestructura STP
+Description: Despliegue de infraestructura STP con VPC
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: STP-Project
+  VpcCIDR:
+    Type: String
+    Default: 10.192.0.0/16
+  PublicSubnet1CIDR:
+    Type: String
+    Default: 10.192.10.0/24
 
 Resources:
+  # --- RED ---
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Ref EnvironmentName
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: !Ref PublicSubnet1CIDR
+      MapPublicIpOnLaunch: true # CLAVE: Para que la EC2 tenga IP pública
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+
+  DefaultPublicRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnet1Association:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet1
+
+  # --- SEGURIDAD ---
   MiSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
+      VpcId: !Ref VPC # ARREGLO 2: Conectado a la VPC
       GroupDescription: Permitir SSH y Flask
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -16,13 +75,15 @@ Resources:
           ToPort: 5000
           CidrIp: 0.0.0.0/0
 
+  # --- COMPUTO ---
   InstanciaProyectoSTP:
     Type: AWS::EC2::Instance
     Properties:
       InstanceType: t2.micro
       ImageId: ami-0c101f26f147fa7fd
       KeyName: vockey
-      SecurityGroups:
+      SubnetId: !Ref PublicSubnet1 
+      SecurityGroupIds:
         - !Ref MiSecurityGroup
       Tags:
         - Key: Name
@@ -30,32 +91,18 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
-          # Instalacion y arranque de Docker
           dnf update -y
           dnf install docker git -y
           systemctl start docker
           systemctl enable docker
           usermod -aG docker ec2-user
-
-          # Clonar repositorio
           cd /home/ec2-user
-          rm -rf avanceDeProyectoTest-DevOps
           git clone https://github.com/SalmuleFish/avanceDeProyectoTest-DevOps.git
           cd avanceDeProyectoTest-DevOps
-
-          # Construir y ejecutar contenedor
           docker build -t mi-app .
           docker run -d -p 5000:5000 --restart always --name web-stp mi-app
-
-          # Configuracion de mantenimiento
-          mkdir -p /etc/cron.d
-          echo "0 0 * * * truncate -s 0 /var/lib/docker/containers/*/*-json.log" > /etc/cron.d/limpieza_logs
-          chmod 644 /etc/cron.d/limpieza_logs
 
   BucketDeReportesSTP:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub "reportes-stp"
-      Tags:
-        - Key: Proyecto
-          Value: STP
+      BucketName: !Sub "reportes-stp-${AWS::AccountId}"

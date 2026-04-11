@@ -1,18 +1,18 @@
-# --- Etapa 1: Construcción (Builder) ---
+# --- Construccion ---
 FROM python:3.10-slim AS builder
 WORKDIR /app
 COPY requirements.txt .
-# Instalamos dependencias en una carpeta local
+# Dependencias en una carpeta local
 RUN pip install --user -r requirements.txt
 
-# --- Etapa 2: Producción ---
+# --- Produccion ---
 FROM python:3.10-slim
 WORKDIR /app
-# Copiamos solo las dependencias instaladas de la etapa 1
+# Copiamos dependencias instaladas
 COPY --from=builder /root/.local /root/.local
 COPY . .
 
-# Agregamos la ruta al PATH
+# Ruta al PATH
 ENV PATH=/root/.local/bin:$PATH
 EXPOSE 5000
 
