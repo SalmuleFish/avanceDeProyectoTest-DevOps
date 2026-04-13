@@ -2,13 +2,11 @@ pipeline {
     agent any
     
     environment {
-        // Credenciales de AWS Academy
         AWS_ACCESS_KEY_ID     = credentials('aws-access-key')
         AWS_SECRET_ACCESS_KEY = credentials('aws-secret-key')
         AWS_SESSION_TOKEN     = credentials('aws-session-token')
         AWS_DEFAULT_REGION    = 'us-east-1'
         
-        // Ruta absoluta del ejecutable de AWS en WSL
         AWS_PATH = '/home/salmule/.local/bin/aws'
     }
     
@@ -19,44 +17,50 @@ pipeline {
             }
         }
         
-        stage('Docker Build') {
+        stage('Docker Build Local') {
             steps {
-                sh 'echo "Construyendo la imagen de Docker para la app..."'
-                // Construye la imagen localmente en WSL
+                sh 'echo "Verificando Dockerfile local..."'
                 sh 'docker build -t mi-app-stf:latest .'
             }
         }
 
-        stage('Deploy Infraestructura AWS') {
+        stage('Deploy Infra (Terraform)') {
             steps {
-                sh 'echo "Lanzando infraestructura en la nube (CloudFormation)..."'
-                // El "|| true" es para que no falle si no hay cambios en el YAML
-                sh """
-                    ${AWS_PATH} cloudformation deploy \
-                    --template-file infraestructura.yaml \
-                    --stack-name mi-proyecto-stp \
-                    --region ${AWS_DEFAULT_REGION} || true
-                """
+                sh 'echo "Aplicando infraestructura con Terraform..."'
+                sh '''
+                    terraform init
+                    terraform apply -auto-approve
+                '''
             }
         }
 
-        stage('Reporte de Recursos (Boto3)') {
+        stage('Reporte de Auditoría (Boto3)') {
             steps {
                 script {
                     def accountId = sh(script: "${AWS_PATH} sts get-caller-identity --query Account --output text", returnStdout: true).trim()
                     env.BUCKET_NAME = "reportes-stp-${accountId}"
                 }
-                sh "./venv/bin/python3 automatizacion.py"
+                sh 'echo "Creando entorno virtual y generando reporte..."'
+                sh '''
+                    # 1. Creamos el entorno virtual si no existe
+                    python3 -m venv venv
+                    
+                    # 2. Instalamos boto3 dentro del venv
+                    ./venv/bin/pip install boto3
+                    
+                    # 3. Corremos el script usando el python del venv
+                    ./venv/bin/python3 automatizacion.py
+                '''
             }
         }
     }
     
     post {
         success {
-            echo '¡Éxito! El pipeline se completó, la infraestructura está arriba y el reporte fue generado.'
+            echo '¡Éxito! Terraform desplegó todo y el reporte de Boto3 se generó correctamente.'
         }
         failure {
-            echo 'Algo falló. Revisá el Console Output para ver si es un tema de credenciales o de sintaxis.'
+            echo 'Fallo en el pipeline. Revisá si falta alguna dependencia o si las credenciales expiraron.'
         }
     }
 }
