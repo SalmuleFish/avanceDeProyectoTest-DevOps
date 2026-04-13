@@ -80,6 +80,7 @@ Resources:
     Type: AWS::EC2::Instance
     Properties:
       InstanceType: t2.micro
+      IamInstanceProfile: LabInstanceProfile
       ImageId: ami-0c101f26f147fa7fd
       KeyName: vockey
       SubnetId: !Ref PublicSubnet1 
