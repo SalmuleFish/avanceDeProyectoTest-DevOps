@@ -76,6 +76,8 @@ resource "aws_instance" "stp_instance" {
   iam_instance_profile   = "LabInstanceProfile"
   key_name               = "vockey"
 
+  user_data_replace_on_change = true
+
   user_data = <<-EOF
               #!/bin/bash
               dnf update -y
@@ -84,7 +86,8 @@ resource "aws_instance" "stp_instance" {
               systemctl enable docker
               usermod -aG docker ec2-user
               cd /home/ec2-user
-              git clone -b testing https://github.com/SalmuleFish/avanceDeProyectoTest-DevOps.git              cd avanceDeProyectoTest-DevOps
+              git clone -b testing https://github.com/SalmuleFish/avanceDeProyectoTest-DevOps.git
+              cd avanceDeProyectoTest-DevOps
               docker build -t mi-app .
               docker run -d -p 5000:5000 --restart always --name web-stp mi-app
               EOF
@@ -99,10 +102,10 @@ data "aws_caller_identity" "current" {}
 
 resource "aws_s3_bucket" "stp_bucket" {
   bucket = "reportes-stp-${data.aws_caller_identity.current.account_id}"
-  force_destroy = true # Para que sea facil de borrar en el lab
+  force_destroy = true 
 }
 
-# --- MONITOREO (Consigna CloudWatch) ---
+# --- MONITOREO (CloudWatch) ---
 resource "aws_cloudwatch_metric_alarm" "cpu_alarm" {
   alarm_name          = "STP-High-CPU-Alarm"
   comparison_operator = "GreaterThanThreshold"
